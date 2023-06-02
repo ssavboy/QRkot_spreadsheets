@@ -6,8 +6,8 @@ from aiogoogle import Aiogoogle
 from app.core.config import settings
 
 FORMAT = '%Y/%m/%d %H:%M:%S'
-REPORT_ROW_COUNT = 100
-REPORT_COLUMN_COUNT = 3
+ROW_LEN = 100
+COLUMN_LEN = 11
 SPREADSHEET_URL = 'https://docs.google.com/spreadsheets/d/{spreadsheets_id}'
 TABLE_VALUES = [
     ['Отчет от', '{date}'],
@@ -24,8 +24,8 @@ SPREADSHEET_BODY = dict(
         sheetId=0,
         title='Лист1',
         gridProperties=dict(
-            rowCount=100,
-            columnCount=11,
+            rowCount=ROW_LEN,
+            columnCount=COLUMN_LEN,
         )
     ))]
 )
@@ -73,16 +73,23 @@ async def spreadsheets_update_value(
             project['description']
         ))) for project in closed_projects]
     ]
-    update_body = {'majorDimension': 'ROWS', 'values': table_values}
-    try:
-        await wrapper_services.as_service_account(
-            sheets_service.spreadsheets.values.update(
-                spreadsheetId=spreadsheet_id,
-                range='R100:C11',
-                valueInputOption='USER_ENTERED',
-                json=update_body,
-            )
+    row_len = len(table_values)
+    column_len = len(max(table_values, key=len))
+    if row_len > ROW_LEN:
+        raise ValueError(
+            f'Максимальная допустимое значение {ROW_LEN}, передано {row_len}'
         )
-    except ValueError:
-        raise ValueError('Недопустимые записи или неправильная длина.')
+    if column_len > COLUMN_LEN:
+        raise ValueError(
+            f'Максимальная допустимое значение {COLUMN_LEN}, '
+            f'передано {column_len}'
+        )
+    await wrapper_services.as_service_account(
+        sheets_service.spreadsheets.values.update(
+            spreadsheetId=spreadsheet_id,
+            range=f'R1C1:R{row_len}C{column_len}',
+            valueInputOption='USER_ENTERED',
+            json={'majorDimension': 'ROWS', 'values': table_values},
+        )
+    )
     return SPREADSHEET_URL.format(spreadsheet_id)
