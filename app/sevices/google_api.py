@@ -1,5 +1,5 @@
-from datetime import datetime, timedelta
 from copy import deepcopy
+from datetime import datetime, timedelta
 
 from aiogoogle import Aiogoogle
 
@@ -16,7 +16,7 @@ TABLE_VALUES = [
 ]
 SPREADSHEET_BODY = dict(
     properties=dict(
-        title=f'Отчет от ',
+        title='Отчет от {date}',
         locale='ru_RU',
     ),
     sheets=[dict(properties=dict(
@@ -29,6 +29,7 @@ SPREADSHEET_BODY = dict(
         )
     ))]
 )
+
 
 async def spreadsheets_create(wrapper_services: Aiogoogle) -> str:
     now_date_time = datetime.now().strftime(FORMAT)
